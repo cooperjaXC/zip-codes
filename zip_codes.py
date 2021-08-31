@@ -1,6 +1,6 @@
 """
 ZIP-Code Crosswalks.
-Takes USA ZIP-Codes and returns 5 digit US Census Zip Code Tract Areas (ZCTAs)
+Takes USA ZIP-Codes and returns 5 digit US Census Zip Code Tabulation Areas (ZCTAs)
 and/or their latitude & longitude centroid coordinates.
 
 By J. A. Cooper https://github.com/cooperjaXC
@@ -56,18 +56,18 @@ class ZipCodes:
 
         # Find the path to the directory of JSONs containing ZIP-Code data.
         filepath = os.path.join(
-            # os.path.dirname(  # comment out if json dir in subdir of curdir
-                os.path.realpath(
-                    os.path.abspath(
-                        os.path.split(inspect.getfile(inspect.currentframe()))[0]
-                    )
-                # )  # comment out if json dir in subdir of curdir
+            os.path.realpath(
+                os.path.abspath(
+                    os.path.split(inspect.getfile(inspect.currentframe()))[0]
+                )
             ),
             "json",
         )
         # If the `json` directory is in a sibling directory to the script
         if os.path.exists(filepath) is False:
-            filepath = os.path.join(os.path.dirname(os.path.dirname(filepath)),os.path.basename(filepath))
+            filepath = os.path.join(
+                os.path.dirname(os.path.dirname(filepath)), os.path.basename(filepath)
+            )
 
         # Establish year-specific variables
         # # ZIP-Code -> ZCTA Crosswalks
@@ -91,8 +91,8 @@ class ZipCodes:
 def zip_code_crosswalk(
     postal_code, year=2020, use_postalcode_if_error=False, suppress_prints=False
 ):
-    """This function takes a (1) postal ZIP Code and transforms it into a Zip Code Tract Area, the US Census-defined
-    polygonal region for a ZIP Code.
+    """This function takes a (1) postal ZIP Code and transforms it into a Zip Code Tabulation Area,
+    the US Census-defined polygonal region for a ZIP Code.
     Postal ZIP Codes are not indicative of a continuous region; rather, they are functional attributes used by the
     US Postal Service to deliver mail & goods. They can refer to a single post office (point), a discontinuous
     region, or an area that transcends state borders. The ZCTA is the Census' way of polygonizing and ordering this
