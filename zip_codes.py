@@ -12,7 +12,7 @@ from collections import defaultdict
 
 def reverse_dict(dictionary: dict):
     """Takes an input dictionary and reverses the keys and values.
-     Input dictionary values do not need to be unique, and they can be both individual and list types."""
+    Input dictionary values do not need to be unique, and they can be both individual and list types."""
     # Create a defaultdict to store reversed values
     reverse_dictionary = defaultdict(list)
 
@@ -26,7 +26,9 @@ def reverse_dict(dictionary: dict):
 
     # If all the values in the dict have a len <=1, set them as individual, non_listed values.
     if all(len(v) <= 1 for v in reverse_dictionary.values()):
-        reverse_dictionary = {k: v[0] if v else None for k, v in reverse_dictionary.items()}
+        reverse_dictionary = {
+            k: v[0] if v else None for k, v in reverse_dictionary.items()
+        }
 
     # Convert defaultdict item back to a regular dictionary
     dict_return = dict(reverse_dictionary)
@@ -117,7 +119,10 @@ def zip_code_formatter(postal_code):
 
 
 def zip_code_crosswalk(
-    postal_code, year=2020, use_postalcode_if_error: bool = False, suppress_prints: bool = False
+    postal_code,
+    year=2020,
+    use_postalcode_if_error: bool = False,
+    suppress_prints: bool = False,
 ):
     """This function takes a (1) postal ZIP Code and transforms it into a Zip Code Tabulation Area,
     the US Census-defined polygonal region for a ZIP Code.
@@ -156,7 +161,7 @@ def df_zip_crosswalk(
     dataframe: pd.DataFrame,
     zip_field_name: str,
     year: int = 2020,
-    zcta_field_name: str ="zcta",
+    zcta_field_name: str = "zcta",
     use_postalcode_if_error: bool = False,
     suppress_prints: bool = False,
 ):
@@ -187,8 +192,10 @@ def df_zip_crosswalk(
         return outdf
 
 
-def reverse_zcta_crosswalk(zcta, year=2020, suppress_prints: bool = False, use_zcta_if_error: bool = True):
-    """ Function takes a ZCTA and returns a list of all ZIP Codes that correspond to that ZCTA."""
+def reverse_zcta_crosswalk(
+    zcta, year=2020, suppress_prints: bool = False, use_zcta_if_error: bool = True
+):
+    """Function takes a ZCTA and returns a list of all ZIP Codes that correspond to that ZCTA."""
 
     # Dictionary of all ZCTAs and their
     zcta_reverse_xwalk = ZipCodes(year).reverse_crosswalk
@@ -200,16 +207,24 @@ def reverse_zcta_crosswalk(zcta, year=2020, suppress_prints: bool = False, use_z
     if zcta_formatted in zcta_reverse_xwalk:
         zips = zcta_reverse_xwalk[zcta_formatted]
     else:
-        nozctawarning = str(zcta_formatted) + " is not in this repository's records of ZCTAs."
+        nozctawarning = (
+            str(zcta_formatted) + " is not in this repository's records of ZCTAs."
+        )
         # Check if the passed ZCTA is actually a non-ZCTA ZIP Code.
         if zcta_formatted in ZipCodes(year).crosswalk:
             if suppress_prints is False:
-                print(nozctawarning, "However, it is already a ZIP Code.",
-                      "It will be returned inside a list as the only item.")
+                print(
+                    nozctawarning,
+                    "However, it is already a ZIP Code.",
+                    "It will be returned inside a list as the only item.",
+                )
             zips = [zcta_formatted]
         elif use_zcta_if_error is True:
             if suppress_prints is False:
-                print(nozctawarning, "It will be returned inside a list as the only item instead.")
+                print(
+                    nozctawarning,
+                    "It will be returned inside a list as the only item instead.",
+                )
             zips = [zcta_formatted]
         else:
             if suppress_prints is False and str(zcta_formatted).lower() != "none":
@@ -229,7 +244,6 @@ def df_reverse_zcta_crosswalk(
     zip_field_name: str = "zip_codes",
     use_zcta_if_error: bool = True,
     suppress_prints: bool = False,
-
 ):
     """Takes a Pandas Dataframe with a ZCTA field and returns a ZIP-Code field using the reverse crosswalk function.
     Returns a Pandas dataframe."""
@@ -251,7 +265,7 @@ def df_reverse_zcta_crosswalk(
                 lambda x: reverse_zcta_crosswalk(
                     x,
                     year=year_zip,
-                    use_zcta_if_error = use_zcta_if_error,
+                    use_zcta_if_error=use_zcta_if_error,
                     suppress_prints=suppress_prints,
                 )
             )
@@ -268,7 +282,10 @@ def df_reverse_zcta_crosswalk(
 
 
 def lat_lon_centroid(
-    postal_code, year: int = 2020, use_postalcode_if_error: bool = False, suppress_prints: bool = False
+    postal_code,
+    year: int = 2020,
+    use_postalcode_if_error: bool = False,
+    suppress_prints: bool = False,
 ):
     """Returns the latitude and longitude coordinates in the centroid of the postal ZIP code's ZCTA
     as defined by the US Census Bureau's TIGER shapefiles. The function will return a list: [lat, lon].
@@ -286,7 +303,8 @@ def lat_lon_centroid(
             zip_is_zcta = zcta == postal_code
             if zip_is_zcta:
                 no_centroid_warning = (
-                    str(postal_code) + " does not have a centroid in this repository's records"
+                    str(postal_code)
+                    + " does not have a centroid in this repository's records"
                 )
             else:
                 no_centroid_warning = (
