@@ -7,6 +7,30 @@ By J. A. Cooper https://github.com/cooperjaXC
 """
 
 import os, json, inspect, numpy as np, pandas as pd
+from collections import defaultdict
+
+
+def reverse_dict(dictionary: dict):
+    """Takes an input dictionary and reverses the keys and values.
+     Input dictionary values do not need to be unique, and they can be both individual and list types."""
+    # Create a defaultdict to store reversed values
+    reverse_dictionary = defaultdict(list)
+
+    for key, value in dictionary.items():
+        # https://stackoverflow.com/questions/13675296/how-to-overcome-typeerror-unhashable-type-list
+        if isinstance(value, list):
+            for v in value:
+                reverse_dictionary[v].append(key)
+        else:
+            reverse_dictionary[value].append(key)
+
+    # If all the values in the dict have a len <=1, set them as individual, non_listed values.
+    if all(len(v) <= 1 for v in reverse_dictionary.values()):
+        reverse_dictionary = {k: v[0] if v else None for k, v in reverse_dictionary.items()}
+
+    # Convert defaultdict item back to a regular dictionary
+    dict_return = dict(reverse_dictionary)
+    return dict_return
 
 
 class ZipCodes:
@@ -57,10 +81,14 @@ class ZipCodes:
             # A dictionary containing the ZIP-Code (key; string)
             # and corresponding ZCTA (value; string) for the given [year].
             self.crosswalk = json.load(open_cross)
+
+        # # ZCTA -> ZIP-Code Reverse Crosswalks
+        self.reverse_crosswalk = reverse_dict(self.crosswalk)
+
+        # # ZCTA -> Latitude & Longitude Centroids
         latlon_path = os.path.join(
             filepath, "zcta_latloncentroid_" + self.year + ".json"
         )
-        # # ZCTA -> Latitude & Longitude Centroids
         with open(latlon_path) as open_ll:
             # A dictionary containing the ZCTA (key; string)
             # and corresponding [Latitude, Longitude] coordinates (value; list) for the given [year].
@@ -108,7 +136,7 @@ def zip_code_crosswalk(
     if postal_code in zipcrosswalk:
         zcta = zipcrosswalk[postal_code]
     else:
-        nozctawarning = str(postal_code) + " is not in CCAoA's records."
+        nozctawarning = str(postal_code) + " is not in this repository's records."
         if use_postalcode_if_error is True:
             if suppress_prints is False:
                 print(nozctawarning, "The input postal code will be returned instead.")
@@ -159,6 +187,86 @@ def df_zip_crosswalk(
         return outdf
 
 
+def reverse_zcta_crosswalk(zcta, year=2020, suppress_prints: bool = False, use_zcta_if_error: bool = True):
+    """ Function takes a ZCTA and returns a list of all ZIP Codes that correspond to that ZCTA."""
+
+    # Dictionary of all ZCTAs and their
+    zcta_reverse_xwalk = ZipCodes(year).reverse_crosswalk
+
+    # Put in some safeguards here in case you get entries with zip 9s or zips w/o the leading 0s.
+    zcta_formatted = zip_code_formatter(zcta)
+
+    # Get ZIP Codes
+    if zcta_formatted in zcta_reverse_xwalk:
+        zips = zcta_reverse_xwalk[zcta_formatted]
+    else:
+        nozctawarning = str(zcta_formatted) + " is not in this repository's records of ZCTAs."
+        # Check if the passed ZCTA is actually a non-ZCTA ZIP Code.
+        if zcta_formatted in ZipCodes(year).crosswalk:
+            if suppress_prints is False:
+                print(nozctawarning, "However, it is already a ZIP Code.",
+                      "It will be returned inside a list as the only item.")
+            zips = [zcta_formatted]
+        elif use_zcta_if_error is True:
+            if suppress_prints is False:
+                print(nozctawarning, "It will be returned inside a list as the only item instead.")
+            zips = [zcta_formatted]
+        else:
+            if suppress_prints is False and str(zcta_formatted).lower() != "none":
+                print(
+                    nozctawarning,
+                    "No zips will be returned. Please double check your entry and try again.",
+                )
+            zips = []
+
+    return zips
+
+
+def df_reverse_zcta_crosswalk(
+    dataframe: pd.DataFrame,
+    zcta_field_name: str = "zcta",
+    year_zip: int = 2020,
+    zip_field_name: str = "zip_codes",
+    use_zcta_if_error: bool = True,
+    suppress_prints: bool = False,
+
+):
+    """Takes a Pandas Dataframe with a ZCTA field and returns a ZIP-Code field using the reverse crosswalk function.
+    Returns a Pandas dataframe."""
+    if zcta_field_name not in dataframe.columns.to_list():
+        print(
+            zcta_field_name,
+            "not in the submitted dataframe. No ZIP Code field will be added.",
+        )
+        return dataframe
+    else:
+        outdf = dataframe.copy()
+        # Create and fill the ZCTA field.
+        outdf[zip_field_name] = (
+            outdf[zcta_field_name]
+            .fillna("0")
+            .astype(int)
+            .astype(str)
+            .apply(
+                lambda x: reverse_zcta_crosswalk(
+                    x,
+                    year=year_zip,
+                    use_zcta_if_error = use_zcta_if_error,
+                    suppress_prints=suppress_prints,
+                )
+            )
+        )
+        # Format the input ZCTA field for output.
+        outdf[zcta_field_name] = (
+            outdf[zcta_field_name]
+            .fillna("0")
+            .astype(int)
+            .astype(str)
+            .apply(lambda x: zip_code_formatter(x))
+        )
+        return outdf
+
+
 def lat_lon_centroid(
     postal_code, year: int = 2020, use_postalcode_if_error: bool = False, suppress_prints: bool = False
 ):
@@ -178,14 +286,14 @@ def lat_lon_centroid(
             zip_is_zcta = zcta == postal_code
             if zip_is_zcta:
                 no_centroid_warning = (
-                    str(postal_code) + " does not have a centroid in CCAoA's records"
+                    str(postal_code) + " does not have a centroid in this repository's records"
                 )
             else:
                 no_centroid_warning = (
                     str(postal_code)
                     + "'s tabulation area "
                     + str(zcta)
-                    + " does not have a centroid in CCAoA's records"
+                    + " does not have a centroid in this repository's records"
                 )
             no_centroid_warning = (
                 no_centroid_warning
