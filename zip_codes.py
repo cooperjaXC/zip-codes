@@ -6,28 +6,7 @@ and/or their latitude & longitude centroid coordinates.
 By J. A. Cooper https://github.com/cooperjaXC
 """
 
-import os, json, inspect, numpy as np, pandas as pd, openpyxl
-
-
-def zip_code_formatter(postal_code):
-    """Formats a USA ZIP-Code into the correct 5-digit format."""
-    # Put in some safeguards here in case you get entries with zip 9s or zips w/o the leading 0s.
-    postal_code = str(postal_code)
-    if len(postal_code) > 5:
-        postal_code = postal_code[:5]
-    if "-" in postal_code:
-        postal_code = postal_code.replace("-", "").replace(" ", "")
-    # Use zfill()? https://stackoverflow.com/questions/733454/best-way-to-format-integer-as-string-with-leading-zeros
-    if len(postal_code) == 3:
-        # No longer only uses postal codes "501" and "544". Expanded to include US overseas territories.
-        postal_code = "00" + postal_code
-    if len(postal_code) == 4:
-        postal_code = "0" + postal_code
-    # Catch nulls and return None
-    null_list = ["0", "nan", "null", "none", "0none", "00nan"]
-    if (not postal_code) or (postal_code.lower() in null_list):
-        postal_code = None
-    return postal_code
+import os, json, inspect, numpy as np, pandas as pd
 
 
 class ZipCodes:
@@ -35,7 +14,7 @@ class ZipCodes:
     2010 Crosswalk data here comes from https://udsmapper.org/zip-code-to-zcta-crosswalk/ .
     This dictionary is based on the 2010 Census' ZCTA data and will need to be updated with the new 2020 geographies."""
 
-    def __init__(self, year=2020):
+    def __init__(self, year: int = 2020):
         # Establish the Census year in question
         try:
             year = int(year)
@@ -88,8 +67,29 @@ class ZipCodes:
             self.latlon_centroids = json.load(open_ll)
 
 
+def zip_code_formatter(postal_code):
+    """Formats a USA ZIP-Code into the correct 5-digit format."""
+    # Put in some safeguards here in case you get entries with zip 9s or zips w/o the leading 0s.
+    postal_code = str(postal_code)
+    if len(postal_code) > 5:
+        postal_code = postal_code[:5]
+    if "-" in postal_code:
+        postal_code = postal_code.replace("-", "").replace(" ", "")
+    # Use zfill()? https://stackoverflow.com/questions/733454/best-way-to-format-integer-as-string-with-leading-zeros
+    if len(postal_code) == 3:
+        # No longer only uses postal codes "501" and "544". Expanded to include US overseas territories.
+        postal_code = "00" + postal_code
+    if len(postal_code) == 4:
+        postal_code = "0" + postal_code
+    # Catch nulls and return None
+    null_list = ["0", "nan", "null", "none", "0none", "00nan"]
+    if (not postal_code) or (postal_code.lower() in null_list):
+        postal_code = None
+    return postal_code
+
+
 def zip_code_crosswalk(
-    postal_code, year=2020, use_postalcode_if_error=False, suppress_prints=False
+    postal_code, year=2020, use_postalcode_if_error: bool = False, suppress_prints: bool = False
 ):
     """This function takes a (1) postal ZIP Code and transforms it into a Zip Code Tabulation Area,
     the US Census-defined polygonal region for a ZIP Code.
@@ -125,12 +125,12 @@ def zip_code_crosswalk(
 
 
 def df_zip_crosswalk(
-    dataframe,
-    zip_field_name,
-    year=2020,
-    zcta_field_name="zcta",
-    use_postalcode_if_error=False,
-    suppress_prints=False,
+    dataframe: pd.DataFrame,
+    zip_field_name: str,
+    year: int = 2020,
+    zcta_field_name: str ="zcta",
+    use_postalcode_if_error: bool = False,
+    suppress_prints: bool = False,
 ):
     """Takes a Pandas Dataframe with a ZIP-Code field and returns a ZCTA field using the crosswalk function.
     Returns a Pandas dataframe."""
@@ -160,7 +160,7 @@ def df_zip_crosswalk(
 
 
 def lat_lon_centroid(
-    postal_code, year=2020, use_postalcode_if_error=False, suppress_prints=False
+    postal_code, year: int = 2020, use_postalcode_if_error: bool = False, suppress_prints: bool = False
 ):
     """Returns the latitude and longitude coordinates in the centroid of the postal ZIP code's ZCTA
     as defined by the US Census Bureau's TIGER shapefiles. The function will return a list: [lat, lon].
@@ -204,12 +204,12 @@ def lat_lon_centroid(
 
 
 def df_latlon_centroids(
-    dataframe,
-    zip_in_field_name,
-    year=2020,
-    keep_coordinates_field=False,
-    use_postalcode_if_error=False,
-    suppress_prints=False,
+    dataframe: pd.DataFrame,
+    zip_in_field_name: str,
+    year: int = 2020,
+    keep_coordinates_field: bool = False,
+    use_postalcode_if_error: bool = False,
+    suppress_prints: bool = False,
 ):
     """
     Takes a Pandas Dataframe with a ZIP-Code field and returns a [latitude, longitude] coordinates field
