@@ -99,7 +99,7 @@ class ZipCodes:
             self.latlon_centroids = json.load(open_ll)
 
 
-def zip_code_formatter(postal_code):
+def zip_code_formatter(postal_code: str | int) -> str:
     """Formats a USA ZIP-Code into the correct 5-digit format."""
     # Put in some safeguards here in case you get entries with zip 9s or zips w/o the leading 0s.
     postal_code = str(postal_code)
@@ -121,11 +121,11 @@ def zip_code_formatter(postal_code):
 
 
 def zip_code_crosswalk(
-    postal_code,
-    year=2020,
+    postal_code: str | int,
+    year: int = 2020,
     use_postalcode_if_error: bool = False,
     suppress_prints: bool = False,
-):
+) -> str:
     """This function takes a (1) postal ZIP Code and transforms it into a Zip Code Tabulation Area,
     the US Census-defined polygonal region for a ZIP Code.
     Postal ZIP Codes are not indicative of a continuous region; rather, they are functional attributes used by the
@@ -162,11 +162,11 @@ def zip_code_crosswalk(
 def df_zip_crosswalk(
     dataframe: pd.DataFrame,
     zip_field_name: str,
-    year: int = 2020,
     zcta_field_name: str = "zcta",
     use_postalcode_if_error: bool = False,
     suppress_prints: bool = False,
-):
+    year_zip: int = 2020,
+) -> pd.DataFrame:
     """Takes a Pandas Dataframe with a ZIP-Code field and returns a ZCTA field using the crosswalk function.
     Returns a Pandas dataframe."""
     if zip_field_name not in dataframe.columns.to_list():
@@ -177,26 +177,34 @@ def df_zip_crosswalk(
         return dataframe
     else:
         outdf = dataframe.copy()
+        # Create and fill the ZCTA field.
         outdf[zcta_field_name] = (
             outdf[zip_field_name]
             .fillna("0")
-            .astype(int)
+            # Using the Int astype() here errors when you have a 9 digit zip (e.g., '45840-8401')
             .astype(str)
             .apply(
                 lambda x: zip_code_crosswalk(
                     x,
-                    year=year,
+                    year=year_zip,
                     use_postalcode_if_error=use_postalcode_if_error,
                     suppress_prints=suppress_prints,
                 )
             )
+        )
+        # Format the input ZIP-Code field for output.
+        outdf[zip_field_name] = (
+            outdf[zip_field_name]
+            .fillna("0")
+            .astype(str)
+            .apply(lambda x: zip_code_formatter(x))
         )
         return outdf
 
 
 def reverse_zcta_crosswalk(
     zcta, year=2020, suppress_prints: bool = False, use_zcta_if_error: bool = True
-):
+) -> list:
     """Function takes a ZCTA and returns a list of all ZIP Codes that correspond to that ZCTA."""
 
     # Dictionary of all ZCTAs and their
@@ -246,7 +254,7 @@ def df_reverse_zcta_crosswalk(
     zip_field_name: str = "zip_codes",
     use_zcta_if_error: bool = True,
     suppress_prints: bool = False,
-):
+) -> pd.DataFrame:
     """Takes a Pandas Dataframe with a ZCTA field and returns a ZIP-Code field using the reverse crosswalk function.
     Returns a Pandas dataframe."""
     if zcta_field_name not in dataframe.columns.to_list():
@@ -288,7 +296,7 @@ def lat_lon_centroid(
     year: int = 2020,
     use_postalcode_if_error: bool = False,
     suppress_prints: bool = False,
-):
+) -> list:
     """Returns the latitude and longitude coordinates in the centroid of the postal ZIP code's ZCTA
     as defined by the US Census Bureau's TIGER shapefiles. The function will return a list: [lat, lon].
     These centroids are not guaranteed to be on land.
@@ -339,7 +347,7 @@ def df_latlon_centroids(
     keep_coordinates_field: bool = False,
     use_postalcode_if_error: bool = False,
     suppress_prints: bool = False,
-):
+) -> pd.DataFrame:
     """
     Takes a Pandas Dataframe with a ZIP-Code field and returns a [latitude, longitude] coordinates field
     using the `lat_lon_centroid` function. Returns a Pandas dataframe.
