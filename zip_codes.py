@@ -12,7 +12,8 @@ from collections import defaultdict
 
 def reverse_dict(dictionary: dict):
     """Takes an input dictionary and reverses the keys and values.
-    Input dictionary values do not need to be unique, and they can be both individual and list types."""
+    Input dictionary values do not need to be unique, and they can be both individual and list types.
+    """
     # Create a defaultdict to store reversed values
     reverse_dictionary = defaultdict(list)
 
@@ -38,7 +39,8 @@ def reverse_dict(dictionary: dict):
 class ZipCodes:
     """Contains variables relating to ZIP-Codes and ZCTAs.
     2010 Crosswalk data here comes from https://udsmapper.org/zip-code-to-zcta-crosswalk/ .
-    This dictionary is based on the 2010 Census' ZCTA data and will need to be updated with the new 2020 geographies."""
+    This dictionary is based on the 2010 Census' ZCTA data and will need to be updated with the new 2020 geographies.
+    """
 
     def __init__(self, year: int = 2020):
         # Establish the Census year in question
@@ -290,7 +292,8 @@ def lat_lon_centroid(
     """Returns the latitude and longitude coordinates in the centroid of the postal ZIP code's ZCTA
     as defined by the US Census Bureau's TIGER shapefiles. The function will return a list: [lat, lon].
     These centroids are not guaranteed to be on land.
-    If there is a body of water near the geometric center of the ZCTA, the centroid may be placed offshore."""
+    If there is a body of water near the geometric center of the ZCTA, the centroid may be placed offshore.
+    """
     zcta = zip_code_formatter(
         zip_code_crosswalk(postal_code, year, use_postalcode_if_error, suppress_prints)
     )
